@@ -1,0 +1,1172 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui;background:#fafafa}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Hardware Till</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: sign-style header with tape-measure ticks. Sell = shelf of price-ticket tiles beside a sale slip (bottom sheet on phones). Other tabs are full-width ledgers. */
+:root{
+  --bg:#E4E9E6; --surface:#F5F7F4; --surface-2:#D9E0DC; --field:#FFFFFF;
+  --ink:#162127; --ink-2:#47565D; --line:#BCC7C1;
+  --accent:#F2B705; --on-accent:#162127; --steel:#2B4A5E; --on-steel:#F5F7F4; --focus:#0B5CC4;
+  --ok:#1B6F45; --ok-bg:#D3EADB; --warn:#9A5A06; --warn-bg:#F5E1BE; --bad:#B02A20; --bad-bg:#F4D5D1;
+  --paper:#FBFBF6; --paper-ink:#1A1D1F;
+  --font-display:'Big Shoulders Display','Arial Narrow',Impact,sans-serif;
+  --font-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  --radius:6px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12181B; --surface:#1B2327; --surface-2:#273238; --field:#0F1518;
+    --ink:#E6ECEA; --ink-2:#9CAAB0; --line:#34434B;
+    --accent:#F2BE1A; --on-accent:#12181B; --steel:#5E8FAA; --on-steel:#0F1518; --focus:#F2BE1A;
+    --ok:#52C58C; --ok-bg:#163826; --warn:#E8AE45; --warn-bg:#3B2D12; --bad:#F27B71; --bad-bg:#3E1A17;
+    --paper:#FBFBF6; --paper-ink:#1A1D1F;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12181B; --surface:#1B2327; --surface-2:#273238; --field:#0F1518;
+  --ink:#E6ECEA; --ink-2:#9CAAB0; --line:#34434B;
+  --accent:#F2BE1A; --on-accent:#12181B; --steel:#5E8FAA; --on-steel:#0F1518; --focus:#F2BE1A;
+  --ok:#52C58C; --ok-bg:#163826; --warn:#E8AE45; --warn-bg:#3B2D12; --bad:#F27B71; --bad-bg:#3E1A17;
+  --paper:#FBFBF6; --paper-ink:#1A1D1F;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;padding-inline:16px;background:var(--bg);color:var(--ink);font:14px/1.45 var(--font-body)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+h1,h2,h3,p,dl,dd,ul{margin:0;padding:0}
+ul{list-style:none}
+.num{font-variant-numeric:tabular-nums}
+
+.app{height:100%;max-width:1560px;margin:0 auto;display:flex;flex-direction:column;min-width:0}
+.top{flex:none;position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;padding:10px 0 16px}
+.top::after{content:"";position:absolute;left:0;right:0;bottom:0;height:9px;opacity:.4;
+  background:
+    repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 8px) 0 100%/100% 5px no-repeat,
+    repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 40px) 0 100%/100% 9px no-repeat}
+.brand{font:800 28px/1 var(--font-display);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.brand b{background:var(--accent);color:var(--on-accent);padding:1px 8px 0;margin-left:6px}
+.brand small{display:block;margin-top:5px;font:500 12px/1.2 var(--font-body);letter-spacing:.01em;text-transform:none;color:var(--ink-2);max-width:28ch;overflow:hidden;text-overflow:ellipsis}
+.nav{display:flex;gap:4px;min-width:0;overflow-x:auto;flex:1 1 auto}
+.nav button{border:0;background:transparent;padding:8px 14px;border-radius:var(--radius);font-weight:600;white-space:nowrap}
+.nav button:hover{background:var(--surface-2)}
+.nav button.on{background:var(--steel);color:var(--on-steel)}
+.badge{margin-left:6px;background:var(--accent);color:var(--on-accent);border-radius:99px;font-size:11px;padding:1px 6px;font-weight:700}
+.top-r{display:flex;align-items:center;gap:14px;margin-left:auto;flex-wrap:wrap}
+.cashier{display:flex;align-items:center;gap:6px;color:var(--ink-2);font-size:13px;font-weight:500}
+.cashier input{width:110px;padding:4px 8px}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2);white-space:nowrap}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--warn)}
+.status.live i{background:var(--ok)}
+.status.demo i{background:var(--bad)}
+
+.view{flex:1;min-height:0;padding-top:12px}
+.page{height:100%;overflow:auto;padding-bottom:24px;min-width:0}
+.page-h{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.page-h h1{font:800 30px/1 var(--font-display);letter-spacing:.05em;text-transform:uppercase}
+.tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.sum{color:var(--ink-2);margin-bottom:12px}
+
+.inp,select.inp,textarea.inp{width:100%;padding:8px 10px;border:1px solid var(--line);background:var(--field);border-radius:var(--radius);min-width:0}
+.tools .inp{width:auto;min-width:200px}
+.btn{border:1px solid var(--ink);background:transparent;padding:8px 14px;border-radius:var(--radius);font-weight:600}
+.btn:hover:not(:disabled){background:var(--surface-2)}
+.btn.pri{background:var(--steel);color:var(--on-steel);border-color:var(--steel)}
+.btn.pri:hover:not(:disabled){filter:brightness(1.1);background:var(--steel)}
+.btn.ghost{border-color:var(--line)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.45}
+.charge{width:100%;border:0;border-radius:var(--radius);background:var(--accent);color:var(--on-accent);font:800 24px/1 var(--font-display);letter-spacing:.05em;text-transform:uppercase;padding:15px 12px}
+.charge:disabled{opacity:.45}
+.charge:hover:not(:disabled){filter:brightness(1.06)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;min-width:0}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);padding:5px 12px;border-radius:99px;font-size:13px;font-weight:500;white-space:nowrap}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.x{border:0;background:transparent;color:var(--ink-2);font-size:20px;line-height:1;padding:2px 8px}
+.x:hover{color:var(--bad)}
+.pill{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.ok{color:var(--ok)} .bad{color:var(--bad)} .muted{color:var(--ink-2)}
+
+/* Sell */
+.sell{height:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,410px);gap:16px;min-height:0}
+.shelf{display:flex;flex-direction:column;min-height:0;min-width:0;gap:10px}
+.search{padding:11px 12px;font-size:15px}
+.grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:10px;overflow:auto;align-content:start;grid-auto-rows:max-content;padding:2px 2px 16px}
+.tile{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 10px 9px;min-height:136px;min-width:0}
+.tile>*{flex:none}
+.tile:hover:not(:disabled){border-color:var(--ink)}
+.tile:active:not(:disabled){transform:translateY(1px)}
+.tile:disabled{opacity:.5}
+.t-top{display:flex;justify-content:space-between;gap:6px;font:500 11px var(--font-mono);color:var(--ink-2)}
+.t-name{font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
+.t-price{display:flex;align-items:baseline;gap:5px;margin-top:auto}
+.t-price b{font:800 30px/1 var(--font-display);letter-spacing:.01em}
+.t-price i{font-style:normal;font-size:12px;color:var(--ink-2)}
+.t-bulk{font-size:12px;color:var(--steel);font-weight:600}
+.gauge{position:relative;height:6px;background:var(--surface-2);overflow:hidden}
+.gauge span{display:block;height:100%;background:var(--ok)}
+.gauge::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 9px,var(--surface) 9px 10px)}
+.tile.s-low .gauge span{background:var(--warn)} .tile.s-out .gauge span{background:var(--bad)}
+.t-stock{font-size:12px;color:var(--ink-2)}
+.tile.s-low .t-stock{color:var(--warn);font-weight:600} .tile.s-out .t-stock{color:var(--bad);font-weight:600}
+
+.cart{display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.cart-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.cart-h h2{font:800 22px/1 var(--font-display);letter-spacing:.05em;text-transform:uppercase}
+.cust-row{display:flex;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.lines{flex:1;min-height:0;overflow:auto}
+.line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;padding:10px 12px;border-bottom:1px dashed var(--line);align-items:center}
+.l-name{font-weight:600;overflow-wrap:anywhere}
+.l-sub{font-size:12px;color:var(--ink-2)}
+.l-sub .tag{color:var(--steel);font-weight:600}
+.l-warn{font-size:12px;color:var(--bad);font-weight:600}
+.l-tot{text-align:right;font:500 14px var(--font-mono)}
+.qty-box{display:inline-flex;align-items:center}
+.qty-box button{width:32px;height:32px;border:1px solid var(--line);background:var(--field);font-size:16px}
+.qty-box input{width:58px;height:32px;text-align:center;border:1px solid var(--line);border-left:0;border-right:0;background:var(--field);border-radius:0;padding:0}
+.l-act{display:flex;align-items:center;justify-content:flex-end;gap:2px}
+.cart-tools{display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid var(--line)}
+.disc{display:flex;align-items:center;gap:8px;padding:0 12px 8px}
+.disc select{width:76px}.disc input{width:100px}
+.sums{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:10px 12px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.sums dd{text-align:right}
+.sums .tot{font:800 20px/1.2 var(--font-display);letter-spacing:.03em;text-transform:uppercase}
+.cart-f{padding:0 12px 12px}
+.cartbar,.cart-close{display:none}
+.empty{padding:36px 16px;text-align:center;color:var(--ink-2);display:grid;gap:12px;justify-items:center}
+.empty h3{font:800 22px/1 var(--font-display);letter-spacing:.05em;text-transform:uppercase;color:var(--ink)}
+.empty p{max-width:46ch}
+
+/* Tables */
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.tbl{width:100%;border-collapse:collapse;min-width:760px}
+.tbl th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);text-align:left;padding:9px 10px;border-bottom:1px solid var(--ink);white-space:nowrap}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.tbl .r{text-align:right;font-variant-numeric:tabular-nums}
+.tbl .sku{font:500 12px var(--font-mono);color:var(--ink-2)}
+.tbl .acts{white-space:nowrap;text-align:right}
+.tbl tr.clickable{cursor:pointer}
+.tbl tr.clickable:hover td{background:var(--surface-2)}
+.void-row td{opacity:.55;text-decoration:line-through}
+
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:14px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;min-width:0}
+.panel h3{font:800 16px/1 var(--font-display);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);margin-bottom:8px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:3px 12px;font-variant-numeric:tabular-nums}
+.kv dd{text-align:right}
+.kv .strong{font-weight:700;border-top:1px solid var(--line);padding-top:4px;margin-top:2px}
+
+/* Modal */
+.modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px}
+.scrim{position:absolute;inset:0;background:rgba(10,16,19,.6)}
+.dlg{position:relative;background:var(--surface);border:1px solid var(--ink);border-radius:var(--radius);width:min(540px,100%);max-height:100%;overflow:auto;padding:16px;display:grid;gap:12px}
+.dlg.wide{width:min(720px,100%)}
+.dlg-h{font:800 24px/1 var(--font-display);letter-spacing:.05em;text-transform:uppercase}
+.dlg-f{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.dlg-f .charge{width:auto;font-size:18px;padding:10px 18px}
+.fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.fgrid .full{grid-column:1/-1}
+label{display:grid;gap:4px;font-size:12px;font-weight:600;color:var(--ink-2);min-width:0}
+label.chk{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink)}
+label.chk input{width:auto}
+.hint{font-size:13px;color:var(--ink-2)}
+.err{color:var(--bad);font-weight:600;font-size:13px}
+.due{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 12px;background:var(--bg);border-radius:var(--radius)}
+.due b{font:800 34px/1 var(--font-display);letter-spacing:.02em}
+.paid-row{display:flex;justify-content:space-between;gap:10px;font-weight:600}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--ink);border-radius:var(--radius);overflow:hidden}
+.seg button{border:0;border-right:1px solid var(--line);background:var(--field);padding:10px 4px;font-weight:600}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--ink);color:var(--bg)}
+.seg button:disabled{opacity:.4}
+.payform{display:grid;gap:10px}
+.paylist li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.paylist b{margin-left:auto;font-variant-numeric:tabular-nums}
+.heldlist li{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.heldlist .grow{flex:1;min-width:0}
+.paper{background:var(--paper);color:var(--paper-ink);font:12.5px/1.4 var(--font-mono);padding:14px 12px;border:1px solid var(--line);overflow-x:auto;white-space:pre;margin:0}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:70;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:var(--radius);max-width:min(92vw,520px);font-weight:500}
+.toast.bad{background:var(--bad);color:#fff}
+.note{font-size:13px;color:var(--ink-2);padding:10px 12px;background:var(--bg);border-radius:var(--radius)}
+
+@media (max-width:900px){
+  .sell{grid-template-columns:minmax(0,1fr)}
+  .grid{padding-bottom:92px}
+  .cart{position:fixed;inset:0;z-index:40;border-radius:0;border:0;visibility:hidden;transform:translateY(100%);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+  .cart.open{visibility:visible;transform:none}
+  .cart-close{display:inline-block}
+  .cartbar{display:flex;align-items:center;justify-content:space-between;gap:10px;position:fixed;left:16px;right:16px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:30;background:var(--accent);color:var(--on-accent);border:0;border-radius:var(--radius);padding:13px 16px;font-weight:700;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+  .cartbar b{font:800 22px/1 var(--font-display);letter-spacing:.04em}
+  .toast{bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+  .brand{font-size:24px}
+  .top-r{margin-left:0}
+}
+@media (max-width:520px){
+  .fgrid{grid-template-columns:minmax(0,1fr)}
+  .tools .inp{min-width:0;flex:1 1 140px}
+  .page-h h1{font-size:26px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .cart{transition:transform .22s ease,visibility .22s}
+}
+</style>
+
+<div class="app">
+  <header class="top" id="top"></header>
+  <main class="view" id="view"></main>
+</div>
+<div class="modal" id="modal" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= helpers ================= */
+const $=(s,el=document)=>el.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const r2=n=>Math.round((Number(n)+Number.EPSILON)*100)/100;
+const r3=n=>Math.round((Number(n)+Number.EPSILON)*1000)/1000;
+const money=n=>Number(n||0).toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2});
+const money0=n=>{const v=Number(n||0);return Number.isInteger(v)?v.toLocaleString('en-KE'):money(v);};
+const qtyFmt=q=>Number.isInteger(q)?String(q):String(r3(q));
+const pad=(n,l=2)=>String(n).padStart(l,'0');
+const dkey=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>dkey(new Date());
+const cutoff=()=>dkey(new Date(Date.now()-45*864e5));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const num=v=>{const n=parseFloat(String(v==null?'':v).replace(/,/g,''));return isFinite(n)?n:NaN;};
+const clean=o=>JSON.parse(JSON.stringify(o));
+const toMap=rows=>{const m={};rows.forEach(r=>{m[r.id]=r.data;});return m;};
+const fmtDT=t=>new Date(t).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false});
+const fmtTime=t=>new Date(t).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});
+const fmtDay=d=>new Date(d+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+let _ls=null;try{_ls=window.localStorage;}catch(e){}
+const lsGet=(k,d)=>{try{return (_ls&&_ls.getItem(k))||d;}catch(e){return d;}};
+const lsSet=(k,v)=>{try{_ls&&_ls.setItem(k,v);}catch(e){}};
+
+/* ================= constants ================= */
+const UNITS={pcs:0,pair:0,set:0,box:0,carton:0,bag:0,roll:0,sheet:0,length:0,tin:0,bundle:0,kg:1,m:1,L:1,tonne:1};
+const isDec=u=>!!UNITS[u];
+const PM={cash:'Cash',mpesa:'M-Pesa',card:'Card',account:'On account'};
+const DEFAULTS={name:'Your Hardware Store',address:'',phone:'',pin:'',vatOn:true,vatRate:16,footer:'Thank you. Keep this receipt for returns and exchanges.',allowNeg:true,maxDisc:10};
+
+/* sku, name, category, unit, price (VAT incl.), cost, stock, reorder, bin, bulk qty, bulk price */
+const SEED=[
+['CEM-425','Portland cement 42.5N, 50kg','Cement & Concrete','bag',780,715,140,40,'A1',20,765],
+['CEM-325','Pozzolana cement, 50kg','Cement & Concrete','bag',730,670,90,40,'A1',20,715],
+['BAL-001','Ballast, per tonne','Cement & Concrete','tonne',2200,1750,18,5,'Yard',5,2100],
+['SND-001','Building sand, per tonne','Cement & Concrete','tonne',2400,1900,22,5,'Yard',5,2300],
+['STL-Y12','Y12 deformed bar, 12m','Steel & Metal','length',1380,1250,210,60,'B1',50,1340],
+['STL-Y10','Y10 deformed bar, 12m','Steel & Metal','length',960,870,180,60,'B1',50,935],
+['STL-Y8','Y8 deformed bar, 12m','Steel & Metal','length',640,575,150,50,'B1',50,620],
+['STL-BRC','BRC mesh A142, 2.4 x 4.8m','Steel & Metal','sheet',4300,3900,24,8,'B2'],
+['STL-BW','Binding wire, gauge 16','Steel & Metal','kg',230,195,65,20,'B3',25,215],
+['TMB-22','Cypress timber 2x2, per metre','Timber & Boards','m',85,64,600,150,'C1',100,78],
+['TMB-42','Cypress timber 4x2, per metre','Timber & Boards','m',170,135,420,120,'C1',100,160],
+['PLY-18','Plywood 18mm, 8 x 4ft','Timber & Boards','sheet',3600,3150,30,10,'C2'],
+['HBD-03','Hardboard 3mm, 8 x 4ft','Timber & Boards','sheet',950,800,36,10,'C2'],
+['ROF-30','Box profile iron sheet, gauge 30, 3m','Roofing','pcs',1050,930,160,50,'D1',50,1020],
+['ROF-RC','Ridge cap, gauge 30','Roofing','pcs',720,620,40,15,'D1'],
+['ROF-NL','Roofing nails 3in','Roofing','kg',260,210,45,15,'D2'],
+['FST-N3','Wire nails 3in','Fasteners','kg',190,158,80,25,'E1',25,180],
+['FST-N2','Wire nails 2in','Fasteners','kg',195,160,70,25,'E1',25,185],
+['FST-N4','Wire nails 4in','Fasteners','kg',190,158,60,20,'E1'],
+['FST-WS','Wood screws 2in, box of 100','Fasteners','box',350,280,40,12,'E2'],
+['FST-MN','Masonry nails 2in, box','Fasteners','box',260,205,4,10,'E2'],
+['PLB-PVC4','PVC pipe 4in class B, 6m','Plumbing','length',2300,1950,28,8,'F1'],
+['PLB-ELB4','PVC elbow 4in','Plumbing','pcs',260,195,50,15,'F1'],
+['PLB-PPR20','PPR pipe 20mm, 4m','Plumbing','length',390,310,60,20,'F2'],
+['PLB-GV12','Brass gate valve 1/2in','Plumbing','pcs',480,380,0,6,'F2'],
+['PLB-TT','PTFE thread tape','Plumbing','roll',40,22,150,50,'F3',12,35],
+['PLB-TNK1','Water tank 1000L','Plumbing','pcs',13500,11800,6,2,'Yard'],
+['ELC-TE25','Twin & earth cable 2.5mm, per metre','Electrical','m',135,108,400,100,'G1',100,125],
+['ELC-SK2','Double socket 13A','Electrical','pcs',480,350,45,15,'G2'],
+['ELC-LED9','LED bulb 9W, B22','Electrical','pcs',190,125,120,40,'G2',12,170],
+['ELC-MCB20','MCB 20A single pole','Electrical','pcs',680,520,30,10,'G3'],
+['ELC-TAPE','Insulating tape','Electrical','roll',60,38,100,30,'G3'],
+['PNT-EM20','Emulsion paint, white, 20L','Paint & Finishes','tin',6900,5900,14,5,'H1'],
+['PNT-GL4','Gloss paint, 4L','Paint & Finishes','tin',2300,1900,22,8,'H1'],
+['PNT-BR4','Paint brush 4in','Paint & Finishes','pcs',260,170,50,15,'H2'],
+['PNT-THN','Paint thinner, per litre','Paint & Finishes','L',350,270,40,10,'H2'],
+['TLS-HM16','Claw hammer 16oz','Hand Tools','pcs',650,480,25,8,'J1'],
+['TLS-TM5','Tape measure 5m','Hand Tools','pcs',380,260,40,12,'J1'],
+['TLS-SL60','Spirit level 600mm','Hand Tools','pcs',950,700,14,5,'J1'],
+['TLS-WB','Wheelbarrow','Hand Tools','pcs',5800,4900,9,3,'Yard'],
+['TLS-PAN','Panga','Hand Tools','pcs',450,330,35,10,'J2'],
+['PWR-AG115','Angle grinder 115mm','Power Tools','pcs',5800,4700,8,3,'K1'],
+['PWR-CD115','Cutting disc 115mm','Power Tools','pcs',95,62,200,60,'K1',50,85],
+['LCK-PAD50','Padlock 50mm','Locks & Hinges','pcs',480,340,40,12,'L1'],
+['LCK-HNG4','Door hinge 4in','Locks & Hinges','pair',190,130,90,30,'L1',20,175],
+['SAF-GBT','Safety gumboots','Safety Gear','pair',1450,1100,18,6,'M1'],
+['SAF-GLV','Work gloves','Safety Gear','pair',160,95,70,24,'M1',12,140],
+['SAF-HHT','Hard hat','Safety Gear','pcs',480,320,30,10,'M1']
+];
+const seedDoc=r=>({sku:r[0],name:r[1],cat:r[2],unit:r[3],price:r[4],cost:r[5],stock:r[6],reorder:r[7],bin:r[8]||'',barcode:'',vat:true,bulkQty:r[9]||0,bulkPrice:r[10]||0});
+const SEED_CUST=[
+  ['c-sample-1',{name:'Sample Contractor Ltd',phone:'0700 000 001',type:'contractor',limit:100000,bal:0,note:'Sample customer'}],
+  ['c-sample-2',{name:'Sample Fundi',phone:'0700 000 002',type:'contractor',limit:20000,bal:0,note:'Sample customer'}],
+  ['c-sample-3',{name:'Sample Farm',phone:'0700 000 003',type:'retail',limit:0,bal:0,note:'Sample customer'}]
+];
+
+/* ================= state ================= */
+function newCart(){return {lines:[],cust:'',disc:{type:'amt',val:0}};}
+const S={
+  view:'sell',status:'connecting',canEdit:true,dl:null,settings:Object.assign({},DEFAULTS),
+  products:{},customers:{},held:{},days:{},acct:{},extra:{},ready:{},loading:{},
+  cart:newCart(),pay:{list:[],method:'cash',err:''},
+  q:'',cat:'All',sq:'',low:false,date:today(),
+  modal:null,cartOpen:false,busy:false,cashier:lsGet('till.cashier','Counter')
+};
+
+/* ================= data layer (shared db, or in-memory demo) ================= */
+const mem={cols:{},subs:[]};
+const memCol=p=>mem.cols[p]||(mem.cols[p]=new Map());
+function memRows(path,where){
+  let rows=[...memCol(path)].map(([id,data])=>({id,data:clean(data)}));
+  if(where){const f=where[0],op=where[1],v=where[2];rows=rows.filter(r=>op==='>='?r.data[f]>=v:op==='=='?r.data[f]===v:true);}
+  return rows;
+}
+const memNotify=p=>mem.subs.filter(s=>s.path===p).forEach(s=>s.cb(memRows(p,s.where)));
+function deepMerge(t,s){
+  Object.keys(s).forEach(k=>{
+    const v=s[k];
+    if(v&&typeof v==='object'&&!Array.isArray(v)&&t[k]&&typeof t[k]==='object'&&!Array.isArray(t[k]))deepMerge(t[k],v);
+    else t[k]=v;
+  });
+  return t;
+}
+const memDB={
+  sub(path,cb,where){const s={path,cb,where};mem.subs.push(s);setTimeout(()=>cb(memRows(path,where)),0);return()=>{mem.subs=mem.subs.filter(x=>x!==s);};},
+  async set(p,id,d){memCol(p).set(id,clean(d));memNotify(p);},
+  async update(p,id,d){const c=memCol(p);if(!c.has(id))throw {code:'invalid_argument',message:'Missing document'};deepMerge(c.get(id),clean(d));memNotify(p);},
+  async del(p,id){memCol(p).delete(id);memNotify(p);},
+  async get(p,id){const c=memCol(p);return c.has(id)?clean(c.get(id)):null;},
+  async query(p,where){return memRows(p,where);}
+};
+function realDB(db){
+  const col=(p,where)=>{let q=db.collection(p);if(where)q=q.where(where[0],where[1],where[2]);return q;};
+  return {
+    sub(path,cb,where){return col(path,where).onSnapshot(s=>cb(s.docs.map(d=>({id:d.id,data:d.data()}))),e=>onDbError(e));},
+    set:(p,id,d)=>db.collection(p).doc(id).set(d),
+    update:(p,id,d)=>db.collection(p).doc(id).update(d),
+    del:(p,id)=>db.collection(p).doc(id).delete(),
+    async get(p,id){const s=await db.collection(p).doc(id).get();return s.exists?s.data():null;},
+    async query(p,where){const s=await col(p,where).get();return s.docs.map(d=>({id:d.id,data:d.data()}));}
+  };
+}
+let DB=memDB,unsubs=[];
+const chains=new Map();
+function serial(key,fn){
+  const prev=chains.get(key)||Promise.resolve();
+  const next=prev.catch(()=>{}).then(fn);
+  chains.set(key,next);
+  next.catch(()=>{}).then(()=>{if(chains.get(key)===next)chains.delete(key);});
+  return next;
+}
+async function retry(fn){
+  try{return await fn();}
+  catch(e){if(e&&e.code==='unavailable'){await new Promise(r=>setTimeout(r,400+Math.random()*400));return fn();}throw e;}
+}
+const W={
+  set:(p,id,d)=>serial(p+'/'+id,()=>retry(()=>DB.set(p,id,clean(d)))),
+  update:(p,id,d)=>serial(p+'/'+id,()=>retry(()=>DB.update(p,id,clean(d)))),
+  del:(p,id)=>serial(p+'/'+id,()=>retry(()=>DB.del(p,id)))
+};
+function onDbError(e){
+  console.error(e);
+  if(e&&e.code==='revoked'){S.status='demo';toast('Your access to this shop data was withdrawn.','bad');render();}
+  else toast('Lost the connection to shop data. Reload the page to reconnect.','bad');
+}
+function fail(e,what){
+  console.error(e);
+  const c=e&&e.code;
+  toast(c==='quota_exceeded'?'Storage is full. Export your data and remove old records.':c==='invalid_argument'?'You do not have permission to change '+(what||'this')+'.':'Could not save '+(what||'changes')+'. Check your connection and try again.','bad');
+}
+function connect(impl,status){
+  unsubs.forEach(u=>{try{u();}catch(e){}});unsubs=[];
+  DB=impl;S.status=status;
+  S.products={};S.customers={};S.held={};S.days={};S.acct={};S.extra={};S.ready={};
+  S.cart=newCart();S.modal=null;
+  const sub=(path,key,cb,where)=>unsubs.push(DB.sub(path,rows=>{cb(rows);S.ready[key]=true;invalidate();},where));
+  sub('products','products',rows=>{S.products=toMap(rows);});
+  sub('customers','customers',rows=>{S.customers=toMap(rows);});
+  sub('held','held',rows=>{S.held=toMap(rows);});
+  sub('settings','settings',rows=>{S.settings=Object.assign({},DEFAULTS,toMap(rows).shop||{});});
+  sub('salesdays','days',rows=>{S.days=toMap(rows);},['date','>=',cutoff()]);
+  sub('acct','acct',rows=>{S.acct=toMap(rows);},['date','>=',cutoff()]);
+  renderModal();
+}
+function seedMem(){
+  SEED.forEach(r=>memCol('products').set(r[0].toLowerCase(),seedDoc(r)));
+  SEED_CUST.forEach(c=>memCol('customers').set(c[0],clean(c[1])));
+}
+let raf=0;
+function invalidate(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;render();});}
+
+/* ================= domain ================= */
+const plist=()=>Object.keys(S.products).map(id=>Object.assign({id},S.products[id])).sort((a,b)=>a.name.localeCompare(b.name));
+const stockOf=p=>Number(p.stock)||0;
+const stockState=p=>stockOf(p)<=0?'out':stockOf(p)<=(Number(p.reorder)||0)?'low':'ok';
+const lowItems=()=>plist().filter(p=>stockState(p)!=='ok');
+const tokens=q=>q.toLowerCase().split(/\s+/).filter(Boolean);
+const hay=p=>(p.name+' '+p.sku+' '+(p.barcode||'')+' '+(p.cat||'')+' '+(p.bin||'')).toLowerCase();
+const matches=(p,q)=>{const h=hay(p);return tokens(q).every(t=>h.includes(t));};
+const creditAvail=c=>{const lim=Number(c.limit)||0;return lim>0?Math.max(0,r2(lim-(Number(c.bal)||0))):0;};
+
+function totals(cart){
+  cart=cart||S.cart;
+  const rate=S.settings.vatOn?(Number(S.settings.vatRate)||0)/100:0;
+  let gross=0;cart.lines.forEach(l=>{gross+=r2(l.qty*l.price);});
+  gross=r2(gross);
+  const d=cart.disc||{type:'amt',val:0};
+  const v=Math.max(0,Number(d.val)||0);
+  const disc=r2(d.type==='pct'?gross*Math.min(v,100)/100:Math.min(v,gross));
+  const total=r2(gross-disc);
+  const f=gross>0?total/gross:1;
+  let vat=0;
+  if(rate>0)cart.lines.forEach(l=>{if(l.vat)vat+=r2(l.qty*l.price)*f*rate/(1+rate);});
+  return {gross,disc,total,vat:r2(vat),count:cart.lines.length};
+}
+function reprice(l){l.price=(l.bulkQty>0&&l.bulkPrice>0&&l.qty>=l.bulkQty)?l.bulkPrice:l.base;}
+function clampQty(l){
+  if(!isDec(l.unit)&&!l.custom)l.qty=Math.max(1,Math.round(l.qty));
+  if(l.pid&&!S.settings.allowNeg){
+    const p=S.products[l.pid];
+    if(p&&l.qty>stockOf(p)){l.qty=Math.max(0,stockOf(p));toast('Only '+qtyFmt(stockOf(p))+' '+l.unit+' in stock.');}
+  }
+}
+function addToCart(id){
+  const p=S.products[id];if(!p)return;
+  let l=S.cart.lines.find(x=>x.pid===id);
+  if(l){l.qty=r3(l.qty+1);}
+  else{l={key:uid(),pid:id,name:p.name,unit:p.unit,qty:1,base:Number(p.price)||0,price:Number(p.price)||0,bulkQty:Number(p.bulkQty)||0,bulkPrice:Number(p.bulkPrice)||0,vat:p.vat!==false,cost:Number(p.cost)||0};S.cart.lines.push(l);}
+  clampQty(l);
+  if(l.qty<=0){S.cart.lines=S.cart.lines.filter(x=>x!==l);}
+  else reprice(l);
+  render();
+}
+const lineByKey=k=>S.cart.lines.find(l=>l.key===k);
+
+/* sales live in day buckets: salesdays/<date>, sales stored under s.<id> so terminals merge safely */
+function salesOn(date){
+  const out=[];
+  const add=map=>Object.keys(map).forEach(b=>{const d=map[b];if(d&&d.date===date&&d.s)Object.keys(d.s).forEach(k=>out.push(Object.assign({},d.s[k],{_b:b})));});
+  add(S.days);if(S.extra[date])add(S.extra[date]);
+  return out.sort((a,b)=>b.t-a.t);
+}
+function findSale(id){
+  let hit=null;
+  const scan=map=>Object.keys(map).forEach(b=>{const d=map[b];if(d&&d.s&&d.s[id])hit=Object.assign({},d.s[id],{_b:b});});
+  scan(S.days);Object.keys(S.extra).forEach(k=>scan(S.extra[k]));
+  return hit;
+}
+function findRef(ref){
+  let hit=null;
+  Object.keys(S.days).forEach(b=>{const d=S.days[b];if(d&&d.s)Object.keys(d.s).forEach(k=>{const s=d.s[k];if(s.st!=='void'&&s.pays&&s.pays.some(p=>p.ref===ref))hit=s.no;});});
+  return hit;
+}
+function bucketFor(date){
+  let n=0;const ids=[];
+  Object.keys(S.days).forEach(b=>{const d=S.days[b];if(d&&d.date===date){n+=d.s?Object.keys(d.s).length:0;ids.push(b);}});
+  const idx=Math.floor(n/250);
+  return idx?date+'~'+idx:date;
+}
+async function ensureDate(date){
+  if(date>=cutoff()||S.extra[date]||S.loading[date])return;
+  S.loading[date]=true;
+  try{const rows=await DB.query('salesdays',['date','==',date]);S.extra[date]=toMap(rows);}
+  catch(e){S.extra[date]={};console.error(e);}
+  S.loading[date]=false;invalidate();
+}
+async function saveSale(sale){
+  const b=bucketFor(sale.date);
+  await serial('salesdays/'+b,async()=>{
+    const cur=await retry(()=>DB.get('salesdays',b));
+    if(cur)await retry(()=>DB.update('salesdays',b,clean({s:{[sale.id]:sale}})));
+    else await retry(()=>DB.set('salesdays',b,clean({date:sale.date,s:{[sale.id]:sale}})));
+    const chk=await retry(()=>DB.get('salesdays',b));
+    if(!chk||!chk.s||!chk.s[sale.id])await retry(()=>DB.update('salesdays',b,clean({s:{[sale.id]:sale}})));
+  });
+}
+
+/* ---- payments & checkout ---- */
+function payState(T){
+  const paid=r2(S.pay.list.reduce((a,p)=>a+p.a,0));
+  return {paid,remaining:Math.max(0,r2(T.total-paid)),change:paid>T.total?r2(paid-T.total):0};
+}
+function openCheckout(){
+  const T=totals();
+  if(!T.count||T.total<=0){toast('Add something to sell first.');return;}
+  if(!S.canEdit){
+    const pct=T.gross>0?T.disc/T.gross*100:0;
+    if(pct>(Number(S.settings.maxDisc)||0)+0.001){toast('Discounts above '+S.settings.maxDisc+'% need a manager. Lower the discount.','bad');return;}
+  }
+  S.pay={list:[],method:'cash',err:''};
+  openModal({type:'checkout',title:'Take payment'});
+}
+function addPayment(){
+  const T=totals(),P=payState(T),m=S.pay.method;
+  const amt=num($('#pay-amt')&&$('#pay-amt').value);
+  const refEl=$('#pay-ref');
+  const ref=refEl?refEl.value.trim().toUpperCase().replace(/\s+/g,''):'';
+  let err='';
+  if(!(amt>0))err='Enter an amount greater than zero.';
+  else if(m!=='cash'&&amt>P.remaining+0.001)err='That is more than the amount still due.';
+  else if(m==='mpesa'){
+    if(!/^[A-Z0-9]{10}$/.test(ref))err='M-Pesa codes have 10 letters and digits, like SJ41A2B3C4.';
+    else if(S.pay.list.some(p=>p.ref===ref))err='That M-Pesa code is already on this sale.';
+    else{const used=findRef(ref);if(used)err='That M-Pesa code is already on receipt '+used+'.';}
+  }else if(m==='account'){
+    const c=S.customers[S.cart.cust];
+    const already=S.pay.list.filter(p=>p.m==='account').reduce((a,p)=>a+p.a,0);
+    if(!c)err='Choose a customer on the sale first.';
+    else if(amt+already>creditAvail(c)+0.001)err='Over the credit limit. Available: KSh '+money(creditAvail(c))+'.';
+  }
+  S.pay.err=err;
+  if(!err)S.pay.list.push({m,a:r2(amt),ref});
+  renderModal();
+}
+async function completeSale(){
+  if(S.busy)return;
+  const T=totals(),P=payState(T);
+  if(P.remaining>0||!T.count)return;
+  S.busy=true;renderModal();
+  const now=new Date(),date=dkey(now);
+  const cid=S.cart.cust,cust=cid?S.customers[cid]:null;
+  const seq=salesOn(date).length+1;
+  const sale={
+    id:uid(),no:pad(now.getFullYear()%100)+pad(now.getMonth()+1)+pad(now.getDate())+'-'+String(seq).padStart(3,'0'),
+    t:now.getTime(),date,cashier:S.cashier,cust:cust?cid:null,custName:cust?cust.name:'',
+    lines:S.cart.lines.map(l=>({p:l.pid||null,n:l.name,u:l.unit,q:l.qty,pr:l.price,v:!!l.vat,c:l.cost||0})),
+    gross:T.gross,disc:T.disc,total:T.total,vat:T.vat,vr:S.settings.vatOn?Number(S.settings.vatRate)||0:0,
+    pays:S.pay.list.map(p=>({m:p.m,a:p.a,ref:p.ref||''})),change:P.change,st:'paid'
+  };
+  try{await saveSale(sale);}
+  catch(e){S.busy=false;fail(e,'the sale');renderModal();return;}
+  const problems=[];
+  for(const l of sale.lines){
+    if(!l.p||!S.products[l.p])continue;
+    try{await W.update('products',l.p,{stock:r3(stockOf(S.products[l.p])-l.q)});}
+    catch(e){problems.push(l.n);}
+  }
+  const acc=sale.pays.filter(p=>p.m==='account').reduce((a,p)=>a+p.a,0);
+  if(acc>0&&cust){
+    try{
+      await W.update('customers',cid,{bal:r2((Number(S.customers[cid].bal)||0)+acc)});
+      await W.set('acct',uid(),{cust:cid,t:sale.t,date,kind:'sale',amt:acc,ref:sale.no});
+    }catch(e){problems.push('customer account');}
+  }
+  S.cart=newCart();S.cartOpen=false;S.busy=false;S.pay={list:[],method:'cash',err:''};
+  openModal({type:'receipt',title:'Receipt',sale,fresh:true});
+  render();
+  if(problems.length)toast('Sale saved, but could not update: '+problems.join(', ')+'. Fix stock by hand.','bad');
+}
+async function voidSale(id){
+  const s=findSale(id);
+  if(!s||s.st==='void')return;
+  try{await retry(()=>DB.update('salesdays',s._b,clean({s:{[id]:{st:'void',voidBy:S.cashier,voidAt:Date.now()}}})));}
+  catch(e){fail(e,'the void');return;}
+  const problems=[];
+  for(const l of s.lines){
+    if(!l.p||!S.products[l.p])continue;
+    try{await W.update('products',l.p,{stock:r3(stockOf(S.products[l.p])+l.q)});}catch(e){problems.push(l.n);}
+  }
+  const acc=s.pays.filter(p=>p.m==='account').reduce((a,p)=>a+p.a,0);
+  if(acc>0&&s.cust&&S.customers[s.cust]){
+    try{
+      await W.update('customers',s.cust,{bal:r2((Number(S.customers[s.cust].bal)||0)-acc)});
+      await W.set('acct',uid(),{cust:s.cust,t:Date.now(),date:today(),kind:'void',amt:-acc,ref:s.no});
+    }catch(e){problems.push('customer account');}
+  }
+  closeModal();
+  toast(problems.length?'Voided, but could not update: '+problems.join(', ')+'.':'Receipt '+s.no+' voided. Stock restored.',problems.length?'bad':'');
+}
+
+/* ---- reports ---- */
+function daySummary(date){
+  const all=salesOn(date),sales=all.filter(s=>s.st!=='void');
+  let total=0,vat=0,cost=0,disc=0;
+  const by={cash:0,mpesa:0,card:0,account:0},items={};
+  sales.forEach(s=>{
+    total+=s.total;vat+=s.vat;disc+=s.disc;
+    s.lines.forEach(l=>{
+      cost+=(l.c||0)*l.q;
+      const k=l.n;items[k]=items[k]||{n:l.n,u:l.u,q:0,a:0};items[k].q+=l.q;items[k].a+=l.q*l.pr;
+    });
+    s.pays.forEach(p=>{by[p.m]=(by[p.m]||0)+p.a;});
+    by.cash-=s.change||0;
+  });
+  const recv={cash:0,mpesa:0,bank:0,cheque:0};
+  Object.keys(S.acct).forEach(k=>{const a=S.acct[k];if(a.date===date&&a.kind==='payment'){recv[a.m]=(recv[a.m]||0)+(-a.amt);}});
+  const top=Object.keys(items).map(k=>items[k]).sort((a,b)=>b.a-a.a).slice(0,5);
+  return {count:sales.length,voids:all.length-sales.length,total:r2(total),vat:r2(vat),disc:r2(disc),margin:r2(total-vat-cost),by,recv,top,cashExpected:r2(by.cash+recv.cash)};
+}
+
+/* ---- receipt text ---- */
+const RW=40;
+const center=s=>{s=String(s);return ' '.repeat(Math.max(0,Math.floor((RW-s.length)/2)))+s;};
+const lr=(a,b)=>{a=String(a);b=String(b);const g=RW-a.length-b.length;return g>0?a+' '.repeat(g)+b:a.slice(0,Math.max(0,RW-b.length-1))+' '+b;};
+function wrap(s,w){
+  w=w||RW;const out=[];let cur='';
+  String(s).split(/\s+/).forEach(word=>{
+    if(!word)return;
+    if((cur+' '+word).trim().length>w){if(cur)out.push(cur);cur=word.slice(0,w);}
+    else cur=(cur+' '+word).trim();
+  });
+  if(cur)out.push(cur);return out;
+}
+function receiptText(s){
+  const st=S.settings,L=[],hr='-'.repeat(RW);
+  wrap(st.name.toUpperCase()).forEach(x=>L.push(center(x)));
+  if(st.address)wrap(st.address).forEach(x=>L.push(center(x)));
+  if(st.phone)L.push(center('Tel '+st.phone));
+  if(st.pin)L.push(center('KRA PIN '+st.pin));
+  L.push(hr);
+  L.push(lr('Receipt '+s.no,fmtDT(s.t)));
+  L.push('Cashier: '+s.cashier);
+  if(s.custName)L.push('Customer: '+s.custName);
+  L.push(hr);
+  s.lines.forEach(l=>{
+    wrap(l.n).forEach(x=>L.push(x));
+    L.push(lr('  '+qtyFmt(l.q)+' '+l.u+' x '+money(l.pr),money(r2(l.q*l.pr))));
+  });
+  L.push(hr);
+  if(s.disc>0){L.push(lr('Subtotal',money(s.gross)));L.push(lr('Discount','-'+money(s.disc)));}
+  L.push(lr('TOTAL KSh',money(s.total)));
+  if(s.vat>0)L.push(lr('incl. VAT '+(s.vr||st.vatRate)+'%',money(s.vat)));
+  L.push(hr);
+  s.pays.forEach(p=>L.push(lr(PM[p.m]+(p.ref?' '+p.ref:''),money(p.a))));
+  if(s.change>0)L.push(lr('Change',money(s.change)));
+  if(s.st==='void'){L.push(hr);L.push(center('*** VOIDED ***'));}
+  if(st.footer){L.push(hr);wrap(st.footer).forEach(x=>L.push(center(x)));}
+  return L.join('\n');
+}
+function waNumber(p){
+  let d=String(p||'').replace(/\D/g,'');
+  if(!d)return '';
+  if(d.startsWith('254'))return d;
+  if(d.startsWith('0'))return '254'+d.slice(1);
+  if(d.length===9)return '254'+d;
+  return d;
+}
+
+/* ---- csv / download ---- */
+const csv=rows=>rows.map(r=>r.map(c=>{c=String(c==null?'':c);return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c;}).join(',')).join('\r\n');
+async function saveFile(name,data){
+  if(!S.dl){toast('Downloads are not available here.','bad');return;}
+  try{await S.dl.save({filename:name,data});toast('Saved '+name);}
+  catch(e){if(!e||e.code!=='declined')toast('Could not save the file.','bad');}
+}
+
+/* ================= views ================= */
+function keepFocus(fn){
+  const a=document.activeElement,id=a&&a.id,s=a&&a.selectionStart,e=a&&a.selectionEnd;
+  fn();
+  if(id){const n=document.getElementById(id);if(n){n.focus();try{if(s!=null)n.setSelectionRange(s,e);}catch(x){}}}
+}
+function render(){
+  if(S.view==='settings'&&!S.canEdit)S.view='sell';
+  keepFocus(()=>{renderTop();$('#view').innerHTML=VIEWS[S.view]();});
+}
+function renderTop(){
+  const low=lowItems().length;
+  const tabs=[['sell','Sell'],['stock','Stock'],['cust','Customers'],['sales','Sales']];
+  if(S.canEdit)tabs.push(['settings','Settings']);
+  const label={live:'Saving to your shop',connecting:'Connecting',demo:'Demo, nothing is saved'}[S.status];
+  $('#top').innerHTML='<div class="brand">Hardware<b>Till</b><small>'+esc(S.settings.name)+'</small></div>'+
+    '<nav class="nav" aria-label="Sections">'+tabs.map(t=>'<button class="'+(S.view===t[0]?'on':'')+'" data-act="tab" data-v="'+t[0]+'">'+t[1]+(t[0]==='stock'&&low?'<span class="badge" title="Items at or below reorder level">'+low+'</span>':'')+'</button>').join('')+'</nav>'+
+    '<div class="top-r"><label class="cashier">Cashier<input id="cashier" class="inp" data-ch="cashier" maxlength="24" value="'+esc(S.cashier)+'"></label>'+
+    '<span class="status '+S.status+'"><i></i>'+label+'</span></div>';
+}
+
+function tile(p){
+  const st=stockState(p),s=stockOf(p);
+  const pct=Math.max(0,Math.min(100,s/Math.max((Number(p.reorder)||0)*3,1)*100));
+  const blocked=s<=0&&!S.settings.allowNeg;
+  return '<button class="tile s-'+st+'" data-act="add" data-id="'+esc(p.id)+'"'+(blocked?' disabled':'')+'>'+
+    '<span class="t-top"><span>'+esc(p.sku)+'</span><span>'+(p.bin?'Bin '+esc(p.bin):'')+'</span></span>'+
+    '<span class="t-name">'+esc(p.name)+'</span>'+
+    '<span class="t-price"><b>'+money0(p.price)+'</b><i>KSh / '+esc(p.unit)+'</i></span>'+
+    (p.bulkQty>0&&p.bulkPrice>0?'<span class="t-bulk">'+qtyFmt(p.bulkQty)+'+ at '+money0(p.bulkPrice)+'</span>':'')+
+    '<span class="gauge"><span style="width:'+pct.toFixed(0)+'%"></span></span>'+
+    '<span class="t-stock">'+(st==='out'?'Out of stock':qtyFmt(s)+' '+esc(p.unit)+(st==='low'?' left, reorder':' in stock'))+'</span></button>';
+}
+function emptyCatalogue(){
+  if(!S.ready.products)return '<div class="empty"><p>Loading your products…</p></div>';
+  return '<div class="empty"><h3>No products yet</h3><p>Add your first product, or load a sample hardware catalogue of about 50 items to try the till. You can edit or remove any of it.</p>'+
+    (S.canEdit?'<div class="tools"><button class="btn pri" data-act="prod-new">Add product</button><button class="btn" data-act="load-sample">Load sample catalogue</button></div>':'<p>Ask a manager to add products.</p>')+'</div>';
+}
+function lineHtml(l){
+  const p=l.pid?S.products[l.pid]:null;
+  const over=p&&l.qty>stockOf(p);
+  const bulk=l.bulkQty>0&&l.bulkPrice>0&&l.qty>=l.bulkQty;
+  return '<div class="line"><div><div class="l-name">'+esc(l.name)+'</div>'+
+    '<div class="l-sub">KSh '+money(l.price)+' / '+esc(l.unit)+(bulk?' <span class="tag">bulk price</span>':l.bulkQty>0?' <span class="muted">· '+qtyFmt(l.bulkQty)+'+ gets '+money0(l.bulkPrice)+'</span>':'')+(l.custom?' · custom':'')+'</div>'+
+    (over?'<div class="l-warn">Only '+qtyFmt(stockOf(p))+' '+esc(l.unit)+' in stock</div>':'')+'</div>'+
+    '<div class="l-tot">'+money(r2(l.qty*l.price))+'</div>'+
+    '<div class="qty-box"><button data-act="dec" data-k="'+l.key+'" aria-label="Less">−</button>'+
+    '<input id="qty-'+l.key+'" data-ch="qty" data-k="'+l.key+'" inputmode="decimal" aria-label="Quantity" value="'+qtyFmt(l.qty)+'">'+
+    '<button data-act="inc" data-k="'+l.key+'" aria-label="More">+</button></div>'+
+    '<div class="l-act"><button class="x" data-act="rm" data-k="'+l.key+'" aria-label="Remove '+esc(l.name)+'">×</button></div></div>';
+}
+function cartPanel(){
+  const T=totals(),heldN=Object.keys(S.held).length;
+  const custs=Object.keys(S.customers).map(id=>Object.assign({id},S.customers[id])).sort((a,b)=>a.name.localeCompare(b.name));
+  const d=S.cart.disc;
+  return '<aside class="cart'+(S.cartOpen?' open':'')+'" aria-label="Current sale">'+
+    '<div class="cart-h"><h2>Current sale</h2><div class="tools">'+
+      '<button class="btn ghost sm" data-act="held">Held'+(heldN?' ('+heldN+')':'')+'</button>'+
+      '<button class="btn ghost sm cart-close" data-act="cart-close">Close</button></div></div>'+
+    '<div class="cust-row"><select id="cust" class="inp" data-ch="cust" aria-label="Customer"><option value="">Walk-in customer</option>'+
+      custs.map(c=>'<option value="'+esc(c.id)+'"'+(S.cart.cust===c.id?' selected':'')+'>'+esc(c.name)+(c.bal>0?' (owes '+money0(c.bal)+')':'')+'</option>').join('')+'</select>'+
+      '<button class="btn ghost sm" data-act="cust-new">New</button></div>'+
+    '<div class="lines">'+(T.count?S.cart.lines.map(lineHtml).join(''):'<div class="empty"><p>Tap a product or scan a barcode to start a sale.</p></div>')+'</div>'+
+    '<div class="cart-tools"><button class="btn ghost sm" data-act="custom">Custom item</button><button class="btn ghost sm" data-act="hold"'+(T.count?'':' disabled')+'>Hold sale</button><button class="btn ghost sm" data-act="clear"'+(T.count?'':' disabled')+'>Clear</button></div>'+
+    '<div class="disc"><label for="disc-val" class="muted">Discount</label><select id="disc-type" class="inp" data-ch="disc-type" aria-label="Discount type"><option value="amt"'+(d.type==='amt'?' selected':'')+'>KSh</option><option value="pct"'+(d.type==='pct'?' selected':'')+'>%</option></select>'+
+      '<input id="disc-val" class="inp" data-ch="disc-val" inputmode="decimal" placeholder="0" value="'+(d.val?esc(d.val):'')+'"></div>'+
+    '<dl class="sums"><dt>Subtotal</dt><dd>'+money(T.gross)+'</dd>'+(T.disc>0?'<dt>Discount</dt><dd>−'+money(T.disc)+'</dd>':'')+
+      (S.settings.vatOn?'<dt class="muted">Includes VAT '+esc(S.settings.vatRate)+'%</dt><dd class="muted">'+money(T.vat)+'</dd>':'')+
+      '<dt class="tot">Total KSh</dt><dd class="tot">'+money(T.total)+'</dd></dl>'+
+    '<div class="cart-f"><button class="charge" data-act="checkout"'+(T.count?'':' disabled')+'>Charge '+money(T.total)+'</button></div></aside>';
+}
+const VIEWS={};
+VIEWS.sell=function(){
+  const all=plist();
+  const cats=['All'].concat([...new Set(all.map(p=>p.cat||'Other'))].sort());
+  if(!cats.includes(S.cat))S.cat='All';
+  const list=all.filter(p=>(S.cat==='All'||(p.cat||'Other')===S.cat)&&matches(p,S.q));
+  const T=totals();
+  return '<div class="sell"><section class="shelf">'+
+    '<input id="q" class="inp search" type="search" placeholder="Scan a barcode or search by name, SKU, bin" aria-label="Search products" autocomplete="off" value="'+esc(S.q)+'">'+
+    '<div class="chips" role="group" aria-label="Categories">'+cats.map(c=>'<button class="chip'+(S.cat===c?' on':'')+'" data-act="cat" data-v="'+esc(c)+'">'+esc(c)+'</button>').join('')+'</div>'+
+    '<div class="grid">'+(list.length?list.map(tile).join(''):(all.length?'<div class="empty" style="grid-column:1/-1"><p>Nothing matches “'+esc(S.q)+'”. Use Custom item for anything not in the catalogue.</p></div>':'<div style="grid-column:1/-1">'+emptyCatalogue()+'</div>'))+'</div></section>'+
+    cartPanel()+
+    '<button class="cartbar" data-act="cart-open"><span>'+(T.count?T.count+(T.count===1?' item':' items'):'Sale is empty')+'</span><b>KSh '+money(T.total)+'</b></button></div>';
+};
+VIEWS.stock=function(){
+  const all=plist();
+  const rows=all.filter(p=>matches(p,S.sq)&&(!S.low||stockState(p)!=='ok'));
+  const cost=all.reduce((a,p)=>a+Math.max(0,stockOf(p))*(Number(p.cost)||0),0);
+  const retail=all.reduce((a,p)=>a+Math.max(0,stockOf(p))*(Number(p.price)||0),0);
+  const nLow=lowItems().length;
+  let body;
+  if(!all.length)body=emptyCatalogue();
+  else body='<div class="tablewrap"><table class="tbl"><thead><tr><th>Item</th><th>Category</th><th>Unit</th><th class="r">Price</th><th class="r">Cost</th><th class="r">In stock</th><th class="r">Reorder at</th><th></th></tr></thead><tbody>'+
+    rows.map(p=>{const st=stockState(p);return '<tr><td><b>'+esc(p.name)+'</b><div class="sku">'+esc(p.sku)+(p.bin?' · Bin '+esc(p.bin):'')+(p.vat===false?' · No VAT':'')+'</div></td>'+
+      '<td>'+esc(p.cat||'')+'</td><td>'+esc(p.unit)+'</td>'+
+      '<td class="r">'+money(p.price)+(p.bulkQty>0&&p.bulkPrice>0?'<div class="muted" style="font-size:12px">'+qtyFmt(p.bulkQty)+'+ at '+money(p.bulkPrice)+'</div>':'')+'</td>'+
+      '<td class="r">'+money(p.cost)+'</td>'+
+      '<td class="r"><span class="pill '+(st==='ok'?'ok':st==='low'?'warn':'bad')+'">'+qtyFmt(stockOf(p))+'</span>'+(p.last?'<div class="muted" style="font-size:12px">'+esc(p.last)+'</div>':'')+'</td>'+
+      '<td class="r">'+qtyFmt(Number(p.reorder)||0)+'</td>'+
+      '<td class="acts">'+(S.canEdit?'<button class="btn ghost sm" data-act="prod-recv" data-id="'+esc(p.id)+'">Adjust stock</button> <button class="btn ghost sm" data-act="prod-edit" data-id="'+esc(p.id)+'">Edit</button>':'')+'</td></tr>';}).join('')+
+    (rows.length?'':'<tr><td colspan="8" class="muted">No items match.</td></tr>')+'</tbody></table></div>';
+  return '<div class="page"><div class="page-h"><h1>Stock</h1><div class="tools">'+
+    '<input id="sq" class="inp" type="search" placeholder="Search items" aria-label="Search stock" value="'+esc(S.sq)+'">'+
+    '<button class="chip'+(S.low?' on':'')+'" data-act="low">Low or out ('+nLow+')</button>'+
+    (S.canEdit?'<button class="btn pri" data-act="prod-new">Add product</button>':'')+
+    (S.dl&&all.length?'<button class="btn ghost" data-act="export-stock">Export CSV</button>':'')+'</div></div>'+
+    (all.length?'<p class="sum num">'+all.length+' items · Stock at cost KSh '+money(cost)+' · At selling price KSh '+money(retail)+'</p>':'')+body+'</div>';
+};
+VIEWS.cust=function(){
+  const list=Object.keys(S.customers).map(id=>Object.assign({id},S.customers[id])).sort((a,b)=>a.name.localeCompare(b.name));
+  const owed=list.reduce((a,c)=>a+Math.max(0,Number(c.bal)||0),0);
+  const body=list.length?'<div class="tablewrap"><table class="tbl"><thead><tr><th>Customer</th><th>Type</th><th class="r">Credit limit</th><th class="r">Owes</th><th></th></tr></thead><tbody>'+
+    list.map(c=>'<tr><td><b>'+esc(c.name)+'</b><div class="sku">'+esc(c.phone||'No phone')+(c.note?' · '+esc(c.note):'')+'</div></td><td>'+(c.type==='contractor'?'Contractor':'Retail')+'</td>'+
+      '<td class="r">'+(Number(c.limit)>0?money(c.limit):'<span class="muted">No credit</span>')+'</td>'+
+      '<td class="r">'+(c.bal>0?'<span class="pill bad">'+money(c.bal)+'</span>':c.bal<0?'<span class="pill ok">Credit '+money(-c.bal)+'</span>':'<span class="muted">0.00</span>')+'</td>'+
+      '<td class="acts"><button class="btn ghost sm" data-act="cust-pay" data-id="'+esc(c.id)+'">Receive payment</button> <button class="btn ghost sm" data-act="cust-stmt" data-id="'+esc(c.id)+'">History</button> <button class="btn ghost sm" data-act="cust-edit" data-id="'+esc(c.id)+'">Edit</button></td></tr>').join('')+'</tbody></table></div>'
+    :'<div class="empty"><h3>No customers yet</h3><p>Walk-in sales do not need a customer. Add contractors and regulars here to sell on account and send receipts on WhatsApp.</p><button class="btn pri" data-act="cust-new">Add customer</button></div>';
+  return '<div class="page"><div class="page-h"><h1>Customers</h1><div class="tools"><button class="btn pri" data-act="cust-new">Add customer</button></div></div>'+
+    (list.length?'<p class="sum num">'+list.length+' customers · Total owed to you KSh '+money(owed)+'</p>':'')+body+'</div>';
+};
+VIEWS.sales=function(){
+  ensureDate(S.date);
+  const all=salesOn(S.date),D=daySummary(S.date),isToday=S.date===today();
+  const rows=all.map(s=>{
+    const methods=[...new Set(s.pays.map(p=>PM[p.m]))].join(', ');
+    return '<tr class="clickable'+(s.st==='void'?' void-row':'')+'" data-act="sale-open" data-id="'+esc(s.id)+'"><td>'+esc(s.no)+'</td><td>'+fmtTime(s.t)+'</td><td>'+esc(s.custName||'Walk-in')+'</td><td class="r">'+s.lines.length+'</td><td>'+esc(methods)+'</td><td>'+esc(s.cashier||'')+'</td><td class="r">'+money(s.total)+'</td><td>'+(s.st==='void'?'<span class="pill bad">Void</span>':'')+'</td></tr>';
+  }).join('');
+  const kv=(a,b,cls)=>'<dt>'+a+'</dt><dd'+(cls?' class="'+cls+'"':'')+'>'+b+'</dd>';
+  return '<div class="page"><div class="page-h"><h1>Sales</h1><div class="tools">'+
+    '<button class="btn ghost sm" data-act="date-prev" aria-label="Previous day">‹</button>'+
+    '<input id="sdate" class="inp" type="date" data-ch="date" value="'+S.date+'" max="'+today()+'" aria-label="Day">'+
+    '<button class="btn ghost sm" data-act="date-next" aria-label="Next day"'+(isToday?' disabled':'')+'>›</button>'+
+    (S.dl&&all.length?'<button class="btn ghost" data-act="export-sales">Export CSV</button>':'')+'</div></div>'+
+    '<p class="sum">'+fmtDay(S.date)+(S.loading[S.date]?' · Loading…':'')+'</p>'+
+    '<div class="cols">'+
+      '<div class="panel"><h3>Takings</h3><dl class="kv">'+kv('Sales',D.count+(D.voids?' ('+D.voids+' void)':''))+kv('Discounts given',money(D.disc))+kv('VAT included',money(D.vat))+kv('Estimated margin',money(D.margin))+kv('Total KSh',money(D.total),'strong')+'</dl></div>'+
+      '<div class="panel"><h3>Money in by method</h3><dl class="kv">'+kv('Cash (after change)',money(D.by.cash))+kv('M-Pesa',money(D.by.mpesa))+kv('Card',money(D.by.card))+kv('On account',money(D.by.account))+'</dl></div>'+
+      '<div class="panel"><h3>Cash drawer</h3><dl class="kv">'+kv('Cash from sales',money(D.by.cash))+kv('Account payments in cash',money(D.recv.cash))+kv('Expected in drawer',money(D.cashExpected),'strong')+'</dl><p class="hint" style="margin-top:8px">Count the drawer and compare. Opening float is not included.</p></div>'+
+      '<div class="panel"><h3>Top items</h3>'+(D.top.length?'<dl class="kv">'+D.top.map(t=>kv(esc(t.n)+' <span class="muted">×'+qtyFmt(r3(t.q))+'</span>',money(t.a))).join('')+'</dl>':'<p class="hint">No sales on this day.</p>')+'</div>'+
+    '</div>'+
+    (all.length?'<div class="tablewrap"><table class="tbl"><thead><tr><th>Receipt</th><th>Time</th><th>Customer</th><th class="r">Lines</th><th>Paid by</th><th>Cashier</th><th class="r">Total</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<div class="empty"><p>No sales recorded on this day.</p></div>')+'</div>';
+};
+VIEWS.settings=function(){
+  const st=S.settings;
+  return '<div class="page"><div class="page-h"><h1>Settings</h1></div><div class="cols" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">'+
+    '<form class="panel fgrid" data-form="settings"><h3 class="full">Shop and receipts</h3>'+
+      '<label class="full">Shop name<input id="s-name" name="name" class="inp" value="'+esc(st.name)+'" maxlength="60"></label>'+
+      '<label>Phone<input id="s-phone" name="phone" class="inp" value="'+esc(st.phone)+'" maxlength="30"></label>'+
+      '<label>KRA PIN<input id="s-pin" name="pin" class="inp" value="'+esc(st.pin)+'" maxlength="20"></label>'+
+      '<label class="full">Address<input id="s-addr" name="address" class="inp" value="'+esc(st.address)+'" maxlength="80"></label>'+
+      '<label class="full">Receipt footer<textarea id="s-foot" name="footer" class="inp" rows="2" maxlength="120">'+esc(st.footer)+'</textarea></label>'+
+      '<label class="chk"><input id="s-vaton" name="vatOn" type="checkbox"'+(st.vatOn?' checked':'')+'> Prices include VAT</label>'+
+      '<label>VAT rate (%)<input id="s-vat" name="vatRate" class="inp" inputmode="decimal" value="'+esc(st.vatRate)+'"></label>'+
+      '<label class="chk"><input id="s-neg" name="allowNeg" type="checkbox"'+(st.allowNeg?' checked':'')+'> Allow selling when stock shows zero</label>'+
+      '<label>Cashier discount limit (%)<input id="s-maxd" name="maxDisc" class="inp" inputmode="decimal" value="'+esc(st.maxDisc)+'"></label>'+
+      '<div class="full dlg-f"><button class="btn pri">Save settings</button></div></form>'+
+    '<div class="panel" style="display:grid;gap:10px;align-content:start"><h3>Data</h3>'+
+      '<p class="hint">Products, customers and sales are saved to this page\'s shared store. Share the page with cashiers as Contributors so they can sell but not change settings.</p>'+
+      '<div><button class="btn" data-act="load-sample">Load sample catalogue</button></div>'+
+      (S.dl?'<div><button class="btn ghost" data-act="export-stock">Export stock CSV</button></div>':'')+
+      '<p class="note">M-Pesa payments are recorded by transaction code, not checked against Safaricom. Match the code to your till SMS. This app does not connect to KRA eTIMS. If your business is VAT-registered, issue tax invoices through eTIMS separately.</p></div>'+
+    '</div></div>';
+};
+
+/* ================= modals ================= */
+function openModal(m){S.modal=m;renderModal();}
+function closeModal(){S.modal=null;renderModal();}
+function renderModal(){
+  const root=$('#modal'),m=S.modal;
+  if(!m){root.hidden=true;root.innerHTML='';return;}
+  root.hidden=false;
+  root.innerHTML='<div class="scrim" data-act="close-modal"></div><div class="dlg'+(m.wide?' wide':'')+'" role="dialog" aria-modal="true" aria-label="'+esc(m.title||'Dialog')+'">'+MODALS[m.type](m)+'</div>';
+  const f=root.querySelector('[autofocus]');if(f){f.focus();try{f.select&&f.select();}catch(e){}}
+}
+const MODALS={};
+const field=(id,label,val,extra)=>'<label>'+label+'<input id="'+id+'" name="'+id+'" class="inp" value="'+esc(val)+'" '+(extra||'')+'></label>';
+
+MODALS.checkout=function(m){
+  const T=totals(),P=payState(T),pm=S.pay.method,cust=S.customers[S.cart.cust];
+  const ups=[...new Set([P.remaining,Math.ceil(P.remaining/100)*100,Math.ceil(P.remaining/500)*500,Math.ceil(P.remaining/1000)*1000])].filter(x=>x>0);
+  return '<h2 class="dlg-h">Take payment</h2>'+
+    '<div class="due"><span>Amount due</span><b>KSh '+money(T.total)+'</b></div>'+
+    '<div class="paid-row num"><span>Paid KSh '+money(P.paid)+'</span><span class="'+(P.remaining>0?'bad':'ok')+'">'+(P.remaining>0?'Still due KSh '+money(P.remaining):P.change>0?'Change KSh '+money(P.change):'Fully paid')+'</span></div>'+
+    '<div class="seg" role="group" aria-label="Payment method">'+['cash','mpesa','card','account'].map(k=>'<button type="button" class="'+(pm===k?'on':'')+'" data-act="pay-method" data-v="'+k+'"'+(k==='account'&&!cust?' disabled title="Choose a customer first"':'')+'>'+PM[k]+'</button>').join('')+'</div>'+
+    (pm==='account'&&cust?'<p class="hint">'+esc(cust.name)+' owes KSh '+money(cust.bal||0)+'. Credit available: KSh '+money(creditAvail(cust))+'.</p>':'')+
+    (P.remaining>0?'<form data-form="pay" class="payform">'+
+      '<label>Amount (KSh)<input id="pay-amt" class="inp" inputmode="decimal" autocomplete="off" value="'+P.remaining+'" autofocus></label>'+
+      (pm==='mpesa'?'<label>M-Pesa transaction code<input id="pay-ref" class="inp" autocomplete="off" maxlength="12" placeholder="SJ41A2B3C4"></label>':'')+
+      (pm==='card'?'<label>Approval code (optional)<input id="pay-ref" class="inp" autocomplete="off" maxlength="20"></label>':'')+
+      (pm==='cash'?'<div class="chips" role="group" aria-label="Quick amounts">'+ups.map(c=>'<button type="button" class="chip" data-act="pay-chip" data-v="'+c+'">'+(c===P.remaining?'Exact':money0(c))+'</button>').join('')+'</div>':'')+
+      '<div><button class="btn pri">Add payment</button></div></form>':'')+
+    (S.pay.err?'<p class="err" role="alert">'+esc(S.pay.err)+'</p>':'')+
+    (S.pay.list.length?'<ul class="paylist">'+S.pay.list.map((p,i)=>'<li><span>'+PM[p.m]+(p.ref?' · '+esc(p.ref):'')+'</span><b>'+money(p.a)+'</b><button class="x" data-act="pay-rm" data-v="'+i+'" aria-label="Remove payment">×</button></li>').join('')+'</ul>':'')+
+    '<div class="dlg-f"><button class="btn ghost" data-act="close-modal">Back to sale</button><button class="charge" data-act="finish"'+(P.remaining>0||S.busy?' disabled':'')+'>'+(S.busy?'Saving…':'Complete sale')+'</button></div>';
+};
+MODALS.receipt=function(m){
+  const s=m.sale,text=receiptText(s),cust=s.cust?S.customers[s.cust]:null;
+  const wa='https://wa.me/'+waNumber(cust&&cust.phone)+'?text='+encodeURIComponent(text);
+  return '<h2 class="dlg-h">'+(m.fresh?'Sale complete':'Receipt '+esc(s.no))+(s.st==='void'?' · Void':'')+'</h2>'+
+    (m.fresh&&s.change>0?'<div class="due"><span>Give change</span><b>KSh '+money(s.change)+'</b></div>':'')+
+    '<pre class="paper" id="rcpt">'+esc(text)+'</pre>'+
+    '<div class="dlg-f"><button class="btn ghost" data-act="rcpt-copy">Copy</button>'+
+    (S.dl?'<button class="btn ghost" data-act="rcpt-save">Save .txt</button>':'')+
+    '<a class="btn ghost" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>'+
+    (S.canEdit&&s.st!=='void'&&!m.fresh?'<button class="btn danger" data-act="sale-void" data-id="'+esc(s.id)+'">Void sale</button>':'')+
+    '<button class="btn pri" data-act="close-modal">'+(m.fresh?'New sale':'Close')+'</button></div>';
+};
+MODALS.product=function(m){
+  const p=m.p||{unit:'pcs',vat:true,stock:0,reorder:0,cat:'',bulkQty:'',bulkPrice:''};
+  const cats=[...new Set(plist().map(x=>x.cat).filter(Boolean))];
+  return '<h2 class="dlg-h">'+(m.id?'Edit product':'Add product')+'</h2>'+
+    '<form data-form="product" data-id="'+esc(m.id||'')+'" class="fgrid">'+
+    '<div class="full">'+field('p-name','Product name',p.name||'','autofocus maxlength="80" required')+'</div>'+
+    field('p-sku','SKU',p.sku||'','maxlength="30"')+field('p-barcode','Barcode (optional)',p.barcode||'','maxlength="30" inputmode="numeric"')+
+    '<label>Category<input id="p-cat" name="p-cat" class="inp" list="cats" value="'+esc(p.cat||'')+'" maxlength="40"><datalist id="cats">'+cats.map(c=>'<option value="'+esc(c)+'">').join('')+'</datalist></label>'+
+    '<label>Sold by<select id="p-unit" name="p-unit" class="inp">'+Object.keys(UNITS).map(u=>'<option'+(p.unit===u?' selected':'')+'>'+u+'</option>').join('')+'</select></label>'+
+    field('p-price','Selling price per unit (KSh)',p.price==null?'':p.price,'inputmode="decimal" required')+field('p-cost','Buying cost per unit (KSh)',p.cost==null?'':p.cost,'inputmode="decimal"')+
+    field('p-bulkq','Bulk price from quantity',p.bulkQty||'','inputmode="decimal" placeholder="e.g. 20"')+field('p-bulkp','Bulk price per unit (KSh)',p.bulkPrice||'','inputmode="decimal"')+
+    field('p-stock','In stock',p.stock==null?0:p.stock,'inputmode="decimal"')+field('p-reorder','Reorder at',p.reorder==null?0:p.reorder,'inputmode="decimal"')+
+    field('p-bin','Shelf or bin',p.bin||'','maxlength="12"')+
+    '<label class="chk" style="align-self:end"><input id="p-vat" name="p-vat" type="checkbox"'+(p.vat!==false?' checked':'')+'> Price includes VAT</label>'+
+    '<p class="err full" id="f-err" role="alert"></p>'+
+    '<div class="full dlg-f">'+(m.id?'<button type="button" class="btn danger" data-act="prod-del" data-id="'+esc(m.id)+'" style="margin-right:auto">Delete</button>':'')+'<button type="button" class="btn ghost" data-act="close-modal">Cancel</button><button class="btn pri">Save product</button></div></form>';
+};
+MODALS.recv=function(m){
+  const p=S.products[m.id]||{};
+  return '<h2 class="dlg-h">Adjust stock</h2><p><b>'+esc(p.name)+'</b><br><span class="muted">Now '+qtyFmt(stockOf(p))+' '+esc(p.unit)+' in stock</span></p>'+
+    '<form data-form="recv" data-id="'+esc(m.id)+'" class="fgrid">'+
+    '<label>Change in quantity<input id="r-qty" name="r-qty" class="inp" inputmode="decimal" placeholder="+50 or -3" autofocus></label>'+
+    '<label>Reason<select id="r-why" name="r-why" class="inp"><option>Delivery received</option><option>Stocktake correction</option><option>Damaged or expired</option><option>Returned to supplier</option><option>Other</option></select></label>'+
+    field('r-cost','New buying cost (optional)','','inputmode="decimal"')+
+    '<p class="err full" id="f-err" role="alert"></p>'+
+    '<div class="full dlg-f"><button type="button" class="btn ghost" data-act="close-modal">Cancel</button><button class="btn pri">Update stock</button></div></form>';
+};
+MODALS.custom=function(){
+  return '<h2 class="dlg-h">Custom item</h2><p class="hint">For anything not in the catalogue, such as delivery, cutting or labour. Stock is not tracked.</p>'+
+    '<form data-form="custom" class="fgrid"><div class="full">'+field('c-name','Description','','autofocus maxlength="80" required')+'</div>'+
+    field('c-price','Price per unit (KSh)','','inputmode="decimal" required')+field('c-qty','Quantity','1','inputmode="decimal"')+
+    '<label class="chk full"><input id="c-vat" name="c-vat" type="checkbox"'+(S.settings.vatOn?' checked':'')+'> Price includes VAT</label>'+
+    '<p class="err full" id="f-err" role="alert"></p>'+
+    '<div class="full dlg-f"><button type="button" class="btn ghost" data-act="close-modal">Cancel</button><button class="btn pri">Add to sale</button></div></form>';
+};
+MODALS.held=function(){
+  const ids=Object.keys(S.held).sort((a,b)=>S.held[b].t-S.held[a].t);
+  return '<h2 class="dlg-h">Held sales</h2>'+(ids.length?'<ul class="heldlist">'+ids.map(id=>{
+    const h=S.held[id],T=totals({lines:h.lines,disc:h.disc||{type:'amt',val:0}});
+    return '<li><div class="grow"><b>'+esc(h.label||'Walk-in')+'</b><div class="muted">'+h.lines.length+' lines · KSh '+money(T.total)+' · '+fmtTime(h.t)+(h.by?' · '+esc(h.by):'')+'</div></div><button class="btn pri sm" data-act="recall" data-id="'+esc(id)+'">Recall</button><button class="x" data-act="held-del" data-id="'+esc(id)+'" aria-label="Delete held sale">×</button></li>';}).join('')+'</ul>':'<p class="hint">No held sales. Use Hold sale to park a customer while you serve the next one.</p>')+
+    '<div class="dlg-f"><button class="btn ghost" data-act="close-modal">Close</button></div>';
+};
+MODALS.customer=function(m){
+  const c=m.c||{type:'retail',limit:0};
+  return '<h2 class="dlg-h">'+(m.id?'Edit customer':'Add customer')+'</h2>'+
+    '<form data-form="customer" data-id="'+esc(m.id||'')+'" data-from="'+esc(m.from||'')+'" class="fgrid"><div class="full">'+field('k-name','Name',c.name||'','autofocus maxlength="60" required')+'</div>'+
+    field('k-phone','Phone (for WhatsApp receipts)',c.phone||'','inputmode="tel" maxlength="20"')+
+    '<label>Type<select id="k-type" name="k-type" class="inp"><option value="retail"'+(c.type!=='contractor'?' selected':'')+'>Retail</option><option value="contractor"'+(c.type==='contractor'?' selected':'')+'>Contractor</option></select></label>'+
+    field('k-limit','Credit limit (KSh, 0 = no credit)',c.limit||0,'inputmode="decimal"')+field('k-note','Note',c.note||'','maxlength="60"')+
+    '<p class="err full" id="f-err" role="alert"></p>'+
+    '<div class="full dlg-f"><button type="button" class="btn ghost" data-act="close-modal">Cancel</button><button class="btn pri">Save customer</button></div></form>';
+};
+MODALS.acctpay=function(m){
+  const c=S.customers[m.id]||{};
+  return '<h2 class="dlg-h">Receive payment</h2><p><b>'+esc(c.name)+'</b><br><span class="muted">Currently owes KSh '+money(c.bal||0)+'</span></p>'+
+    '<form data-form="acctpay" data-id="'+esc(m.id)+'" class="fgrid">'+
+    field('a-amt','Amount received (KSh)',c.bal>0?c.bal:'','inputmode="decimal" autofocus')+
+    '<label>Method<select id="a-m" name="a-m" class="inp"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option><option value="bank">Bank transfer</option><option value="cheque">Cheque</option></select></label>'+
+    '<div class="full">'+field('a-ref','Reference (M-Pesa code, cheque no.)','','maxlength="30"')+'</div>'+
+    '<p class="err full" id="f-err" role="alert"></p>'+
+    '<div class="full dlg-f"><button type="button" class="btn ghost" data-act="close-modal">Cancel</button><button class="btn pri">Record payment</button></div></form>';
+};
+MODALS.stmt=function(m){
+  const c=S.customers[m.id]||{};
+  const rows=m.rows;
+  return '<h2 class="dlg-h">'+esc(c.name)+'</h2><p class="muted num">Balance owed: KSh '+money(c.bal||0)+'</p>'+
+    (rows==null?'<p class="hint">Loading…</p>':rows.length?'<div class="tablewrap"><table class="tbl" style="min-width:420px"><thead><tr><th>Date</th><th>What</th><th>Reference</th><th class="r">Amount</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+fmtDT(r.t)+'</td><td>'+({sale:'Sale on account',payment:'Payment received',void:'Sale voided'}[r.kind]||r.kind)+'</td><td>'+esc(r.ref||'')+'</td><td class="r '+(r.amt>0?'bad':'ok')+'">'+(r.amt>0?'+':'−')+money(Math.abs(r.amt))+'</td></tr>').join('')+'</tbody></table></div>':'<p class="hint">No account activity yet.</p>')+
+    '<div class="dlg-f"><button class="btn ghost" data-act="close-modal">Close</button></div>';
+};
+MODALS.confirm=function(m){
+  return '<h2 class="dlg-h">'+esc(m.title)+'</h2><p>'+esc(m.body)+'</p><div class="dlg-f"><button class="btn ghost" data-act="close-modal">Cancel</button><button class="btn danger" data-act="'+m.yes+'" data-id="'+esc(m.id)+'">'+esc(m.label||'Confirm')+'</button></div>';
+};
+
+/* ================= actions ================= */
+function holdSale(){
+  const T=totals();if(!T.count)return;
+  const c=S.cart.cust?S.customers[S.cart.cust]:null;
+  const id=uid();
+  W.set('held',id,{t:Date.now(),label:c?c.name:'Walk-in',cust:S.cart.cust||'',by:S.cashier,disc:S.cart.disc,lines:S.cart.lines})
+    .then(()=>toast('Sale held.')).catch(e=>fail(e,'the held sale'));
+  S.cart=newCart();S.cartOpen=false;render();
+}
+function recall(id){
+  const h=S.held[id];if(!h)return;
+  if(S.cart.lines.length){toast('Hold or clear the current sale first.','bad');return;}
+  S.cart={lines:h.lines.map(l=>Object.assign({},l)),cust:h.cust||'',disc:h.disc||{type:'amt',val:0}};
+  W.del('held',id).catch(e=>fail(e,'the held sale'));
+  closeModal();render();
+}
+async function loadSample(){
+  toast('Loading sample catalogue…');
+  try{
+    for(const r of SEED){
+      const id=r[0].toLowerCase();
+      if(!S.products[id])await W.set('products',id,seedDoc(r));
+    }
+    for(const c of SEED_CUST){if(!S.customers[c[0]])await W.set('customers',c[0],c[1]);}
+    toast('Sample catalogue loaded.');
+  }catch(e){fail(e,'the catalogue');}
+}
+const ACT={
+  tab(el){S.view=el.dataset.v;S.cartOpen=false;render();},
+  cat(el){S.cat=el.dataset.v;render();},
+  add(el){addToCart(el.dataset.id);},
+  inc(el){const l=lineByKey(el.dataset.k);if(l){l.qty=r3(l.qty+1);clampQty(l);reprice(l);render();}},
+  dec(el){const l=lineByKey(el.dataset.k);if(l){l.qty=r3(l.qty-1);if(l.qty<=0)S.cart.lines=S.cart.lines.filter(x=>x!==l);else{clampQty(l);reprice(l);}render();}},
+  rm(el){S.cart.lines=S.cart.lines.filter(l=>l.key!==el.dataset.k);render();},
+  clear(){S.cart=newCart();render();},
+  hold:holdSale,
+  held(){openModal({type:'held',title:'Held sales'});},
+  recall(el){recall(el.dataset.id);},
+  'held-del'(el){W.del('held',el.dataset.id).then(()=>renderModal()).catch(e=>fail(e,'the held sale'));},
+  custom(){openModal({type:'custom',title:'Custom item'});},
+  'cart-open'(){S.cartOpen=true;render();},
+  'cart-close'(){S.cartOpen=false;render();},
+  checkout:openCheckout,
+  'pay-method'(el){S.pay.method=el.dataset.v;S.pay.err='';renderModal();},
+  'pay-chip'(el){const i=$('#pay-amt');if(i){i.value=el.dataset.v;i.focus();}},
+  'pay-rm'(el){S.pay.list.splice(Number(el.dataset.v),1);S.pay.err='';renderModal();},
+  finish:completeSale,
+  'rcpt-copy'(){
+    const t=receiptText(S.modal.sale);
+    const sel=()=>{const r=document.createRange();r.selectNodeContents($('#rcpt'));const s=window.getSelection();s.removeAllRanges();s.addRange(r);toast('Press Ctrl+C or long-press to copy.');};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(()=>toast('Receipt copied.')).catch(sel);}else sel();
+  },
+  'rcpt-save'(){saveFile('receipt-'+S.modal.sale.no+'.txt',receiptText(S.modal.sale));},
+  'close-modal'(){closeModal();},
+  'sale-open'(el){const s=findSale(el.dataset.id);if(s)openModal({type:'receipt',title:'Receipt',sale:s});},
+  'sale-void'(el){const s=findSale(el.dataset.id);if(!s)return;
+    const cash=s.pays.filter(p=>p.m!=='account').map(p=>PM[p.m]+' '+money(p.a)).join(', ');
+    openModal({type:'confirm',title:'Void receipt '+s.no+'?',body:'Stock goes back on the shelf and the sale is removed from takings.'+(cash?' Refund the customer: '+cash+(s.change>0?' (less change given '+money(s.change)+')':'')+'.':''),yes:'void-yes',id:s.id,label:'Void sale'});},
+  'void-yes'(el){voidSale(el.dataset.id);},
+  'prod-new'(){openModal({type:'product',title:'Add product'});},
+  'prod-edit'(el){const p=S.products[el.dataset.id];if(p)openModal({type:'product',title:'Edit product',id:el.dataset.id,p});},
+  'prod-recv'(el){openModal({type:'recv',title:'Adjust stock',id:el.dataset.id});},
+  'prod-del'(el){const p=S.products[el.dataset.id];if(p)openModal({type:'confirm',title:'Delete '+p.name+'?',body:'This removes the product from the catalogue. Past sales keep their records.',yes:'prod-del-yes',id:el.dataset.id,label:'Delete product'});},
+  'prod-del-yes'(el){W.del('products',el.dataset.id).then(()=>{S.cart.lines=S.cart.lines.filter(l=>l.pid!==el.dataset.id);closeModal();render();}).catch(e=>fail(e,'the product'));},
+  low(){S.low=!S.low;render();},
+  'cust-new'(){openModal({type:'customer',title:'Add customer',from:S.view});},
+  'cust-edit'(el){const c=S.customers[el.dataset.id];if(c)openModal({type:'customer',title:'Edit customer',id:el.dataset.id,c});},
+  'cust-pay'(el){openModal({type:'acctpay',title:'Receive payment',id:el.dataset.id});},
+  'cust-stmt'(el){
+    const id=el.dataset.id,m={type:'stmt',title:'Account history',id,rows:null,wide:true};
+    openModal(m);
+    DB.query('acct',['cust','==',id]).then(rows=>{m.rows=rows.map(r=>r.data).sort((a,b)=>b.t-a.t).slice(0,40);if(S.modal===m)renderModal();}).catch(()=>{m.rows=[];if(S.modal===m)renderModal();});
+  },
+  'date-prev'(){const d=new Date(S.date+'T12:00:00');d.setDate(d.getDate()-1);S.date=dkey(d);render();},
+  'date-next'(){const d=new Date(S.date+'T12:00:00');d.setDate(d.getDate()+1);if(dkey(d)<=today()){S.date=dkey(d);render();}},
+  'export-sales'(){
+    const rows=[['Receipt','Date','Time','Cashier','Customer','Item','Unit','Qty','Unit price','Line total','Receipt total','Paid by','Status']];
+    salesOn(S.date).slice().reverse().forEach(s=>s.lines.forEach(l=>rows.push([s.no,s.date,fmtTime(s.t),s.cashier,s.custName,l.n,l.u,l.q,l.pr,r2(l.q*l.pr),s.total,s.pays.map(p=>PM[p.m]+(p.ref?' '+p.ref:'')).join('; '),s.st])));
+    saveFile('sales-'+S.date+'.csv',csv(rows));
+  },
+  'export-stock'(){
+    const rows=[['SKU','Name','Category','Unit','Price','Cost','In stock','Reorder at','Bin','Barcode']];
+    plist().forEach(p=>rows.push([p.sku,p.name,p.cat,p.unit,p.price,p.cost,stockOf(p),p.reorder,p.bin,p.barcode]));
+    saveFile('stock-'+today()+'.csv',csv(rows));
+  },
+  'load-sample':loadSample
+};
+const CH={
+  cashier(el){S.cashier=el.value.trim()||'Counter';lsSet('till.cashier',S.cashier);},
+  cust(el){S.cart.cust=el.value;render();},
+  qty(el){
+    const l=lineByKey(el.dataset.k);if(!l)return;
+    const n=num(el.value);
+    if(!(n>0))S.cart.lines=S.cart.lines.filter(x=>x!==l);
+    else{l.qty=r3(n);clampQty(l);if(l.qty<=0)S.cart.lines=S.cart.lines.filter(x=>x!==l);else reprice(l);}
+    render();
+  },
+  'disc-type'(el){S.cart.disc.type=el.value;render();},
+  'disc-val'(el){const n=num(el.value);S.cart.disc.val=n>0?n:0;render();},
+  date(el){if(el.value&&el.value<=today()){S.date=el.value;render();}}
+};
+const FORMS={
+  pay(){addPayment();},
+  product(f){
+    const g=n=>f.elements[n].value.trim(),id=f.dataset.id;
+    const err=m=>{$('#f-err').textContent=m;};
+    const name=g('p-name'),price=num(g('p-price')),cost=num(g('p-cost')||0),stock=num(g('p-stock')||0),reorder=num(g('p-reorder')||0);
+    const bq=num(g('p-bulkq')||0),bp=num(g('p-bulkp')||0),unit=g('p-unit');
+    if(!name)return err('Enter a product name.');
+    if(!(price>=0))return err('Enter a selling price.');
+    if(!isFinite(cost)||cost<0)return err('Buying cost must be a number.');
+    if(!isFinite(stock)||!isFinite(reorder))return err('Stock and reorder level must be numbers.');
+    if((bq>0)!==(bp>0))return err('Set both the bulk quantity and the bulk price, or leave both empty.');
+    if(bp>0&&bp>=price)return err('Bulk price should be lower than the normal price.');
+    const sku=g('p-sku')||('P'+Date.now().toString(36).toUpperCase().slice(-5));
+    if(plist().some(p=>p.sku.toLowerCase()===sku.toLowerCase()&&p.id!==id))return err('Another product already uses that SKU.');
+    const doc=Object.assign({},id?S.products[id]:{},{name,sku,barcode:g('p-barcode'),cat:g('p-cat')||'Other',unit,price:r2(price),cost:r2(cost),stock:isDec(unit)?r3(stock):Math.round(stock),reorder:Number(reorder)||0,bin:g('p-bin'),vat:f.elements['p-vat'].checked,bulkQty:bq>0?bq:0,bulkPrice:bp>0?r2(bp):0});
+    W.set('products',id||uid(),doc).then(()=>{closeModal();toast('Product saved.');}).catch(e=>fail(e,'the product'));
+  },
+  recv(f){
+    const id=f.dataset.id,p=S.products[id],err=m=>{$('#f-err').textContent=m;};
+    const d=num(f.elements['r-qty'].value),c=num(f.elements['r-cost'].value);
+    if(!isFinite(d)||d===0)return err('Enter how many to add, or a negative number to remove.');
+    const ns=r3(stockOf(p)+d);
+    if(d<0&&ns<0)return err('You cannot remove more than the '+qtyFmt(stockOf(p))+' in stock.');
+    const upd={stock:ns,last:f.elements['r-why'].value+' '+(d>0?'+':'')+qtyFmt(d)+', '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})};
+    if(c>=0&&isFinite(c)&&f.elements['r-cost'].value.trim())upd.cost=r2(c);
+    W.update('products',id,upd).then(()=>{closeModal();toast('Stock updated.');}).catch(e=>fail(e,'stock'));
+  },
+  custom(f){
+    const err=m=>{$('#f-err').textContent=m;};
+    const name=f.elements['c-name'].value.trim(),price=num(f.elements['c-price'].value),qty=num(f.elements['c-qty'].value);
+    if(!name)return err('Describe the item.');
+    if(!(price>0))return err('Enter a price.');
+    if(!(qty>0))return err('Enter a quantity.');
+    const l={key:uid(),pid:null,name,unit:'pcs',qty:r3(qty),base:r2(price),price:r2(price),bulkQty:0,bulkPrice:0,vat:f.elements['c-vat'].checked,cost:0,custom:true};
+    S.cart.lines.push(l);closeModal();render();
+  },
+  customer(f){
+    const id=f.dataset.id,err=m=>{$('#f-err').textContent=m;};
+    const name=f.elements['k-name'].value.trim(),limit=num(f.elements['k-limit'].value||0);
+    if(!name)return err('Enter a name.');
+    if(!isFinite(limit)||limit<0)return err('Credit limit must be zero or more.');
+    const nid=id||uid(),old=id?S.customers[id]:{bal:0};
+    const doc=Object.assign({},old,{name,phone:f.elements['k-phone'].value.trim(),type:f.elements['k-type'].value,limit:r2(limit),note:f.elements['k-note'].value.trim(),bal:Number(old.bal)||0});
+    W.set('customers',nid,doc).then(()=>{if(!id&&f.dataset.from==='sell')S.cart.cust=nid;closeModal();render();toast('Customer saved.');}).catch(e=>fail(e,'the customer'));
+  },
+  acctpay(f){
+    const id=f.dataset.id,c=S.customers[id],err=m=>{$('#f-err').textContent=m;};
+    const amt=num(f.elements['a-amt'].value);
+    if(!(amt>0))return err('Enter the amount received.');
+    const m=f.elements['a-m'].value,ref=f.elements['a-ref'].value.trim();
+    W.update('customers',id,{bal:r2((Number(c.bal)||0)-amt)})
+      .then(()=>W.set('acct',uid(),{cust:id,t:Date.now(),date:today(),kind:'payment',amt:-r2(amt),m,ref}))
+      .then(()=>{closeModal();toast('Payment recorded.');}).catch(e=>fail(e,'the payment'));
+  },
+  settings(f){
+    const e=f.elements,rate=num(e.vatRate.value),md=num(e.maxDisc.value);
+    if(!isFinite(rate)||rate<0||rate>100){toast('VAT rate must be between 0 and 100.','bad');return;}
+    const doc={name:e.name.value.trim()||DEFAULTS.name,address:e.address.value.trim(),phone:e.phone.value.trim(),pin:e.pin.value.trim().toUpperCase(),footer:e.footer.value.trim(),vatOn:e.vatOn.checked,vatRate:rate,allowNeg:e.allowNeg.checked,maxDisc:isFinite(md)&&md>=0?md:DEFAULTS.maxDisc};
+    W.set('settings','shop',doc).then(()=>toast('Settings saved.')).catch(x=>fail(x,'settings'));
+  }
+};
+
+/* ================= toast ================= */
+let toastTimer=0;
+function toast(msg,kind){
+  const t=$('#toast');t.textContent=msg;t.className='toast'+(kind==='bad'?' bad':'');t.hidden=false;
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.hidden=true;},kind==='bad'?6000:3200);
+}
+
+/* ================= events ================= */
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]');
+  if(!el||el.disabled)return;
+  const fn=ACT[el.dataset.act];
+  if(fn){if(el.tagName==='A')return;fn(el);}
+});
+document.addEventListener('change',e=>{
+  const el=e.target.closest('[data-ch]');
+  if(el&&CH[el.dataset.ch])CH[el.dataset.ch](el);
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='q'){S.q=e.target.value;render();}
+  else if(e.target.id==='sq'){S.sq=e.target.value;render();}
+});
+document.addEventListener('submit',e=>{
+  const f=e.target.closest('form[data-form]');
+  if(!f)return;
+  e.preventDefault();
+  const fn=FORMS[f.dataset.form];if(fn)fn(f);
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&S.modal&&!S.busy){closeModal();return;}
+  if(e.key==='Enter'&&e.target.id==='q'){
+    e.preventDefault();
+    const q=S.q.trim().toLowerCase();if(!q)return;
+    const all=plist();
+    let hit=all.find(p=>p.sku.toLowerCase()===q||(p.barcode&&p.barcode.toLowerCase()===q));
+    if(!hit){const m=all.filter(p=>(S.cat==='All'||(p.cat||'Other')===S.cat)&&matches(p,S.q));if(m.length===1)hit=m[0];}
+    if(hit){S.q='';addToCart(hit.id);const i=$('#q');if(i)i.focus();}
+    else toast('No single product matches “'+S.q+'”.');
+  }
+});
+
+/* ================= boot ================= */
+async function boot(){
+  seedMem();connect(memDB,'connecting');render();
+  const c=window.claude;
+  if(!c||!c.use){S.status='demo';render();return;}
+  let db=null;
+  try{db=await c.use('db');}catch(e){}
+  if(!db){S.status='demo';render();return;}
+  try{const u=await c.use('user');if(u&&typeof u.canEdit==='function')S.canEdit=!!u.canEdit();}catch(e){}
+  try{S.dl=await c.use('downloads');}catch(e){S.dl=null;}
+  connect(realDB(db),'live');render();
+}
+boot();
+})();
+</script>
+</body></html>
